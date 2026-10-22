@@ -1,0 +1,8 @@
+# Private Wi-Fi and Adafruit IO credentials
+secrets.h
+
+# macOS files
+.DS_Store
+
+# Arduino build files
+build/
