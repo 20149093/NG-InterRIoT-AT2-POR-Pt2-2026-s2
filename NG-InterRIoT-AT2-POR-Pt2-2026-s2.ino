@@ -135,6 +135,14 @@ for (int attempt = 0; attempt < MAX_WIFI_ATTEMPTS; attempt++) {
   //Turn off the red LED after wifi connection
   digitalWrite(LED_RED, LOW);
 
+  // Flash green LED twice when Wi-Fi connects
+  for (int i = 0; i < 2; i++) {
+    digitalWrite(LED_GREEN, HIGH);
+    delay(150);
+    digitalWrite(LED_GREEN, LOW);
+    delay(150);
+  }
+
   DEBUG_PRINT("IP address: ");
   DEBUG_PRINTLN(WiFi.localIP());
 
@@ -217,6 +225,11 @@ if (!mqttConnected) {
 
     if (distanceFeed.publish(distanceCm)) {
       DEBUG_PRINTLN("Distance published successfully!");
+
+      // Flash blue LED once after successful distance publication
+      digitalWrite(LED_BLUE, HIGH);
+      delay(200);
+      digitalWrite(LED_BLUE, LOW);
     } else {
       DEBUG_PRINTLN("Failed to publish distance.");
     }
