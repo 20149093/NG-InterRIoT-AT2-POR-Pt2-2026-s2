@@ -22,6 +22,11 @@
 #define LED_GREEN 13
 #define LED_BLUE 18
 
+// HC-SR04 ultrasonic sensor
+#define TRIG_PIN 5
+#define ECHO_PIN 19
+#define ECHO_TIMEOUT_MICROSECONDS 30000UL
+
 // Deep Sleep configuration
 #define SLEEP_TIME_SECONDS 1800
 #define MICROSECONDS_PER_SECOND 1000000ULL
@@ -44,10 +49,20 @@ Adafruit_MQTT_Publish deviceFeed(
   MQTT_FEED
 );
 
+// Distance measurement feed
+Adafruit_MQTT_Publish distanceFeed(
+  &mqtt,
+  AIO_USERNAME "/feeds/inter-riot-at2-data"
+);
+
 void setup() {
 pinMode(LED_RED, OUTPUT);
 pinMode(LED_GREEN, OUTPUT);
 pinMode(LED_BLUE, OUTPUT);
+pinMode(TRIG_PIN, OUTPUT);
+pinMode(ECHO_PIN, INPUT);
+
+digitalWrite(TRIG_PIN, LOW);
 
 digitalWrite(LED_RED, HIGH);
 digitalWrite(LED_GREEN, LOW);
@@ -191,6 +206,24 @@ if (!mqttConnected) {
   } else {
     DEBUG_PRINTLN("Failed to publish message.");
   }
+
+  // Measure and publish the distance before entering Deep Sleep
+  float distanceCm = measureDistanceCm();
+
+  if (distanceCm >= 0) {
+    DEBUG_PRINT("Distance: ");
+    DEBUG_PRINT(distanceCm);
+    DEBUG_PRINTLN(" cm");
+
+    if (distanceFeed.publish(distanceCm)) {
+      DEBUG_PRINTLN("Distance published successfully!");
+    } else {
+      DEBUG_PRINTLN("Failed to publish distance.");
+    }
+  } else {
+    DEBUG_PRINTLN("Distance measurement timed out.");
+  }
+
   // Wait five seconds before entering Deep Sleep
 DEBUG_PRINTLN("Waiting 5 seconds before Deep Sleep...");
 delay(5000);
@@ -206,6 +239,26 @@ enterDeepSleep();
 
 void loop() {
   // Connectivity test only.
+}
+
+float measureDistanceCm() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  unsigned long duration = pulseIn(
+    ECHO_PIN,
+    HIGH,
+    ECHO_TIMEOUT_MICROSECONDS
+  );
+
+  if (duration == 0) {
+    return -1.0;
+  }
+
+  return duration * 0.0343 / 2.0;
 }
 
 void enterDeepSleep() {
